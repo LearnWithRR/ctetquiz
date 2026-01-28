@@ -9,7 +9,7 @@
   body {
     font-family: 'Roboto', sans-serif;
     margin:0; 
-    background: linear-gradient(135deg,#13f1c9,#0554f1);
+    background-color: #22a88dc4;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -17,7 +17,7 @@
   }
 
   .container {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(50, 26, 26);
     backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 30px 40px;
@@ -33,7 +33,7 @@
     font-weight:bold; 
     color:#fff; 
     font-size:1.8rem;
-    background: rgba(0,0,0,0.3);
+    background: rgba(251, 0, 0, 0.718);
     display:inline-block;
     padding:10px 20px;
     border-radius:10px;
@@ -46,7 +46,7 @@
     padding:12px 20px;
     border:none;
     border-radius:10px;
-    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+    background: linear-gradient(45deg, #ff416db3, #67ff2b9d);
     color:#fff;
     font-weight:bold;
     cursor:pointer;
@@ -95,7 +95,7 @@
     background: rgba(255,255,255,0.1);
   }
   .question label:hover { 
-    background: rgba(255,255,255,0.25);
+    background: rgba(217, 4, 241, 0.881);
     transform:translateX(5px);
   }
   .question input {
@@ -111,11 +111,31 @@
     background: rgba(244, 67, 54, 0.7) !important;
     border-left:5px solid #c62828 !important;
   }
-  .unattempted-correct { 
-    background: rgba(33, 150, 243, 0.3) !important;
-    border-left:5px solid #1565c0 !important;
-  }
 
+  .next-section-box { 
+    text-align:center; 
+    margin:30px 0; 
+    padding-top: 20px;
+    border-top: 2px dashed rgba(255,255,255,0.3);
+  }
+  .next-section-box button {
+    padding:15px 40px;
+    font-size:18px;
+    border:none;
+    border-radius:15px;
+    background: linear-gradient(45deg, #2196F3, #21CBF3);
+    color:#fff;
+    cursor:pointer;
+    transition:0.3s;
+    font-weight:bold;
+    box-shadow:0 8px 25px rgba(33,150,243,0.4);
+    margin: 10px;
+  }
+  .next-section-box button:hover { 
+    transform:translateY(-3px) scale(1.05);
+    box-shadow:0 12px 30px rgba(33,150,243,0.6);
+  }
+  
   .submit-box { text-align:center; margin:30px 0; }
   .submit-box button {
     padding:15px 40px;
@@ -150,6 +170,28 @@
     color:#ffeb3b;
   }
 
+  .section-progress {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .section-progress .section-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    margin: 5px;
+    cursor: pointer;
+  }
+  .section-progress .section-dot.active {
+    background: #4CAF50;
+    transform: scale(1.2);
+  }
+  .section-progress .section-dot.attempted {
+    background: #2196F3;
+  }
+
   @keyframes fadeIn { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
   
   @media(max-width:768px) {
@@ -164,6 +206,10 @@
     #timer { font-size:1.5rem; }
     .question { padding:15px; }
     .question p { font-size:16px; }
+    .next-section-box button, .submit-box button {
+      padding: 12px 30px;
+      font-size: 16px;
+    }
   }
 </style>
 </head>
@@ -174,6 +220,10 @@
     <h1>CTET Online Exam - Paper I</h1>
     <p>Time Left: <span id="timer">02:30:00</span></p>
   </header>
+
+  <div class="section-progress" id="sectionProgress">
+    <!-- Progress dots will be added by JavaScript -->
+  </div>
 
   <nav>
     <button onclick="loadSection('cdp')">CDP (बाल विकास)</button>
@@ -187,6 +237,10 @@
     <h3 style="text-align:center;color:#fff; padding:20px;">कृपया ऊपर से सेक्शन चुनें</h3>
   </main>
 
+  <div id="nextSectionBox" class="next-section-box" style="display:none;">
+    <!-- Next section button will appear here -->
+  </div>
+
   <div class="submit-box">
     <button onclick="submitExam()">Submit Exam</button>
   </div>
@@ -195,19 +249,9 @@
 </div>
 
 <script>
-// Timer 2.5 hours
+// Timer 2.5 hours (in seconds)
 let time = 2.5 * 60 * 60;
-const timerInterval = setInterval(() => {
-  let h = String(Math.floor(time / 3600)).padStart(2, '0');
-  let m = String(Math.floor((time % 3600) / 60)).padStart(2, '0');
-  let s = String(time % 60).padStart(2, '0');
-  document.getElementById("timer").innerText = `${h}:${m}:${s}`;
-  if(time <= 0) {
-    clearInterval(timerInterval);
-    submitExam();
-  }
-  time--;
-}, 1000);
+let timerInterval;
 
 // All 150 questions section-wise
 const questions = {
@@ -430,7 +474,7 @@ const questions = {
     {
       q: "व्यक्ति-प्रथम भाषा का उपयोग, जैसे कि 'अधिगम अक्षम छात्र' के बजाय 'अधिगम अक्षमता वाले छात्र' के वर्णन का उपयोग करना -",
       options: [
-        "अक्षमता से ध्यान हटा देता है और समावेशन की सच्ची भावना में सही नहीं है",
+        "अक्षमता से ध्यान हटा देता है और समावेशन की सच्ची भावना में सच नहीं है",
         "समावेशन के मानवाधिकार दृष्टिकोण के अनुरूप है",
         "अक्षमता के चिकित्सकीय मॉडल पर जोर दिखाता है",
         "अक्षम लोगों की सही पहचान और नामकरण में बाधक है"
@@ -907,7 +951,7 @@ evs: [
     answer: 3
   },
   {
-    q: "एनसीईआरटी की पाँचवीं कक्षा की पाठ्यपुस्तक में झारखंड में रहने वाली सूर्यमणि की एक वास्तविक कहानी है। यह अध्याय आदिवासी जीवन और सूर्यमणि की भूमिका को दर्शाता है। छात्रों के लिए प्रासंगिक अध्याय द्वारा संबोधित सबसे महत्वपूर्ण पहलुओं का चयन करें। (1) जनजातीय समुदायों के बारे में लोकप्रिय धारणाएँ और पूर्वाग्रह (2) वनवासियों (समुदायों) और उनके आसपास के जंगलों के बीच घनिष्ठ संबंध (3) लड़कियों की शिक्षा कैसे उनके जीवन को बदलती है (4) जनजातीय आदिवासियों द्वारा उपयोग किए जाने वाले वन उत्पाद",
+    q: "एनसीईआरटी की पाँचवी कक्षा की पाठ्यपुस्तक में झारखंड में रहने वाली सूर्यमणि की एक वास्तविक कहानी है। यह अध्याय आदिवासी जीवन और सूर्यमणि की भूमिका को दर्शाता है। छात्रों के लिए प्रासंगिक अध्याय द्वारा संबोधित सबसे महत्वपूर्ण पहलुओं का चयन करें। (1) जनजातीय समुदायों के बारे में लोकप्रिय धारणाएँ और पूर्वाग्रह (2) वनवासियों (समुदायों) और उनके आसपास के जंगलों के बीच घनिष्ठ संबंध (3) लड़कियों की शिक्षा कैसे उनके जीवन को बदलती है (4) जनजातीय आदिवासियों द्वारा उपयोग किए जाने वाले वन उत्पाद",
     options: [
       "2 और 3",
       "1, 2 और 3",
@@ -1231,7 +1275,7 @@ hindi: [
     answer: 3
   },
   {
-    q: "‘हृदयराज की रानी’ किसके लिए प्रयुक्त हुआ है?",
+    q: "‘हृदयराज की रानी' किसके लिए प्रयुक्त हुआ है?",
     options: [
       "संध्या",
       "तिमिर",
@@ -1241,7 +1285,7 @@ hindi: [
     answer: 0
   },
   {
-    q: "‘दिवसावसान’ का संधि विच्छेद है:",
+    q: "‘दिवसावसान' का संधि विच्छेद है:",
     options: [
       "दिवसा + वसान",
       "दिवस + आवसान",
@@ -1324,7 +1368,7 @@ hindi: [
     q: "किसी पाठ्य सामग्री से विशिष्ट सूचना निकालने के उद्देश्य से गहनता से पढने का कौशल ______ बोध है।",
     options: [
       "मूल्यांकन परक",
-      "वैश्विक",
+      "वैश्लेषिक",
       "स्थानीय",
       "निष्कर्षात्मक"
     ],
@@ -1421,7 +1465,7 @@ hindi: [
     answer: 1
   },
   {
-    q: "‘अंतरभाषिक पहचान’ क्या है?",
+    q: "‘अंतरभाषिक पहचान' क्या है?",
     options: [
       "दोनों भाषाओं में समान निर्णय",
       "भाषाओं में असमान निर्णय",
@@ -1739,10 +1783,77 @@ sanskrit: [
 
 let userAnswers = {};
 let currentSection = "";
+const sections = ['cdp', 'maths', 'evs', 'hindi', 'sanskrit'];
+
+// Start timer
+function startTimer() {
+  timerInterval = setInterval(() => {
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById("timer").innerText = "00:00:00";
+      submitExam();
+      return;
+    }
+
+    let h = String(Math.floor(time / 3600)).padStart(2, '0');
+    let m = String(Math.floor((time % 3600) / 60)).padStart(2, '0');
+    let s = String(time % 60).padStart(2, '0');
+
+    document.getElementById("timer").innerText = `${h}:${m}:${s}`;
+    time--;
+  }, 1000);
+}
+
+// Initialize progress dots
+function initializeProgress() {
+  const progressDiv = document.getElementById("sectionProgress");
+  progressDiv.innerHTML = '';
+  
+  sections.forEach((section, index) => {
+    const dot = document.createElement('div');
+    dot.className = 'section-dot';
+    dot.id = `dot-${section}`;
+    dot.title = getSectionName(section);
+    dot.onclick = () => loadSection(section);
+    
+    if (currentSection === section) {
+      dot.classList.add('active');
+    }
+    
+    // Check if section has attempted questions
+    const hasAttempted = checkSectionAttempted(section);
+    if (hasAttempted) {
+      dot.classList.add('attempted');
+    }
+    
+    progressDiv.appendChild(dot);
+  });
+}
+
+function getSectionName(section) {
+  const names = {
+    'cdp': 'बाल विकास',
+    'maths': 'गणित',
+    'evs': 'पर्यावरण',
+    'hindi': 'हिन्दी',
+    'sanskrit': 'संस्कृत'
+  };
+  return names[section] || section;
+}
+
+function checkSectionAttempted(section) {
+  for (let i = 0; i < questions[section].length; i++) {
+    if (userAnswers[`${section}_${i}`] !== undefined) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function loadSection(section) {
   currentSection = section;
   const box = document.getElementById("questionBox");
+  const nextBox = document.getElementById("nextSectionBox");
   
   const sectionNames = {
     'cdp': 'Child Development & Pedagogy (बाल विकास)',
@@ -1770,11 +1881,43 @@ function loadSection(section) {
     qHtml += "</div>";
     box.innerHTML += qHtml;
   });
+  
+  // Show next section button
+  nextBox.style.display = 'block';
+  const currentIndex = sections.indexOf(section);
+  
+  let nextButtonHtml = '';
+  if (currentIndex < sections.length - 1) {
+    const nextSection = sections[currentIndex + 1];
+    nextButtonHtml = `<button onclick="loadSection('${nextSection}')">Next Section (${getSectionName(nextSection)}) →</button>`;
+  } else {
+    nextButtonHtml = `<button onclick="submitExam()" style="background: linear-gradient(45deg, #00b09b, #96c93d);">Final Submit Exam</button>`;
+  }
+  
+  // Add previous button if not first section
+  if (currentIndex > 0) {
+    const prevSection = sections[currentIndex - 1];
+    nextButtonHtml = `<button onclick="loadSection('${prevSection}')" style="background: linear-gradient(45deg, #ff416c, #ff4b2b);">← Previous Section (${getSectionName(prevSection)})</button>` + nextButtonHtml;
+  }
+  
+  nextBox.innerHTML = nextButtonHtml;
+  
+  // Update progress dots
+  initializeProgress();
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function saveAnswer(sec, qIndex, optIndex) {
   userAnswers[`${sec}_${qIndex}`] = optIndex;
   localStorage.setItem('ctetAnswers', JSON.stringify(userAnswers));
+  
+  // Update progress dot for this section
+  const dot = document.getElementById(`dot-${sec}`);
+  if (dot && !dot.classList.contains('attempted')) {
+    dot.classList.add('attempted');
+  }
 }
 
 function submitExam() {
@@ -1831,22 +1974,20 @@ function submitExam() {
   // Show result box
   const resultBox = document.getElementById("resultBox");
   resultBox.style.display = "block";
+  const nextBox = document.getElementById("nextSectionBox");
+  nextBox.style.display = "none";
   
   const percentage = ((correct / total) * 100).toFixed(1);
   resultBox.innerHTML = `
     <h3>📊 परिणाम (Result)</h3>
     <p>कुल प्रश्न (Total Questions): <strong>${total}</strong></p>
-    <p>प्रयास किए गए प्रश्न (Attempted): <strong>${attempted}</strong></p>
     <p>सही उत्तर (Correct Answers): <strong>${correct}</strong></p>
     <p>गलत उत्तर (Wrong Answers): <strong>${attempted - correct}</strong></p>
     <p>छोड़े गए प्रश्न (Skipped): <strong>${total - attempted}</strong></p>
     <p>अंक (Marks): <strong>${correct} / ${total}</strong></p>
     <p>प्रतिशत (Percentage): <strong>${percentage}%</strong></p>
     <hr style="border-color:rgba(255,255,255,0.3); margin:15px 0;">
-    <p><strong>रंगों का अर्थ (Color Legend):</strong></p>
-    <p>🟢 <strong>हरा (Green):</strong> आपका सही उत्तर</p>
-    <p>🔴 <strong>लाल (Red):</strong> आपका गलत उत्तर</p>
-    <p>🔵 <strong>नीला (Blue):</strong> सही उत्तर (जो प्रश्न आपने attempt नहीं किया)</p>
+    
     <p style="color:#ffeb3b; font-weight:bold; margin-top:20px;">
       ${percentage >= 60 ? '🎉 बधाई! आप उत्तीर्ण हुए हैं।' : '✋ कृपया पुनः प्रयास करें।'}
     </p>
@@ -1862,6 +2003,12 @@ window.onload = function() {
   if (savedAnswers) {
     userAnswers = JSON.parse(savedAnswers);
   }
+  
+  // Start timer
+  startTimer();
+  
+  // Initialize progress dots
+  initializeProgress();
 };
 </script>
 
